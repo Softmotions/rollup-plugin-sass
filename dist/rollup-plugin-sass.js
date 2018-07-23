@@ -108,9 +108,7 @@ function plugin() {
                         file: resolve.sync(moduleUrl, resolveOptions)
                       });
                     } catch (err) {
-                      done({
-                        file: url
-                      });
+                      return null;
                     }
                   }].concat(customizedSassOptions.importer || [])
                 }));

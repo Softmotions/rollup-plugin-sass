@@ -1,5 +1,5 @@
 {
-  "name": "rollup-plugin-sass",
+  "name": "@softmotions/rollup-plugin-sass",
   "version": "0.9.2",
   "description": "Rollup .sass files.",
   "main": "dist/rollup-plugin-sass.js",
