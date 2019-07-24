@@ -4,28 +4,24 @@ export default {
   input: './src/index.js',
   output: {
     format: 'cjs',
-    file: 'dist/rollup-plugin-sass.js'
+    file: 'dist/index.js'
   },
   external: [
-    'babel-runtime/regenerator',
-    'babel-runtime/core-js/json/stringify',
-    'babel-runtime/core-js/object/assign',
-    'babel-runtime/core-js/object/keys',
-    'babel-runtime/helpers/asyncToGenerator',
-    'babel-runtime/helpers/toConsumableArray',
-    'babel-runtime/helpers/typeof',
+    '@babel/runtime/regenerator',
+    '@babel/runtime/helpers/toConsumableArray',
+    '@babel/runtime/helpers/typeof',
+    '@babel/runtime/helpers/asyncToGenerator',
+    'pify',
+    'resolve',
+    'sass',
     'path',
     'fs',
-    'resolve',
-    'pify',
-    'sass',
-    'util',
     'rollup-pluginutils',
     'fs-extra'
   ],
   plugins: [
     babel({
-      exclude: './node_modules/**',
+      exclude: 'node_modules/**',
       runtimeHelpers: true
     })
   ]

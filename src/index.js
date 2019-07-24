@@ -1,19 +1,18 @@
 import pify from 'pify'
 import resolve from 'resolve';
 import sass from 'sass';
-import { dirname } from 'path';
-import { writeFileSync } from 'fs';
-import { isString, isFunction } from 'util';
-import { createFilter } from 'rollup-pluginutils';
-import { insertStyle } from './style.js';
-import { ensureFileSync } from 'fs-extra';
+import {dirname} from 'path';
+import {writeFileSync} from 'fs';
+import {createFilter} from 'rollup-pluginutils';
+import {insertStyle} from './style.js';
+import {ensureFileSync} from 'fs-extra';
 
 const MATCH_SASS_FILENAME_RE = /\.sass$/;
 const MATCH_NODE_MODULE_RE = /^~([a-z0-9]|@).+/i;
 
 export default function plugin(options = {}) {
   const {
-    include = [ '**/*.sass', '**/*.scss' ],
+    include = ['**/*.sass', '**/*.scss'],
     exclude = 'node_modules/**',
   } = options;
   const filter = createFilter(include, exclude);
@@ -48,12 +47,12 @@ export default function plugin(options = {}) {
           data: customizedSassOptions.data && `${customizedSassOptions.data}${code}`,
           indentedSyntax: MATCH_SASS_FILENAME_RE.test(id),
           includePaths: customizedSassOptions.includePaths
-            ? customizedSassOptions.includePaths.concat(paths)
-            : paths,
+                        ? customizedSassOptions.includePaths.concat(paths)
+                        : paths,
           importer: [
             (url, importer, done) => {
               if (!MATCH_NODE_MODULE_RE.test(url)) {
-                return done({ file: url });
+                return null;
               }
 
               const moduleUrl = url.slice(1);
@@ -67,7 +66,12 @@ export default function plugin(options = {}) {
                   file: resolve.sync(moduleUrl, resolveOptions),
                 });
               } catch (err) {
-                return null;
+                if (customizedSassOptions.importer && customizedSassOptions.importer.length) {
+                  return null;
+                }
+                done({
+                  file: url,
+                });
               }
             },
           ].concat(customizedSassOptions.importer || []),
@@ -77,16 +81,18 @@ export default function plugin(options = {}) {
         let restExports;
 
         if (css) {
-          if (isFunction(options.processor)) {
+          if (typeof options.processor === 'function') {
             const processResult = await options.processor(css, id);
 
             if (typeof processResult === 'object') {
               if (typeof processResult.css !== 'string') {
-                throw new Error('You need to return the styles using the `css` property. See https://github.com/differui/rollup-plugin-sass#processor');
+                throw new Error(
+                  'You need to return the styles using the `css` property. See https://github.com/differui/rollup-plugin-sass#processor');
               }
               css = processResult.css;
               delete processResult.css;
-              restExports = Object.keys(processResult).map(name => `export const ${name} = ${JSON.stringify(processResult[name])};`);
+              restExports = Object.keys(processResult)
+                                  .map(name => `export const ${name} = ${JSON.stringify(processResult[name])};`);
             } else if (typeof processResult === 'string') {
               css = processResult;
             }
@@ -114,8 +120,8 @@ export default function plugin(options = {}) {
           ].join('\n'),
           map: {
             mappings: res.map
-              ? res.map.toString()
-              : '',
+                      ? res.map.toString()
+                      : '',
           },
         };
       } catch (error) {
@@ -123,23 +129,26 @@ export default function plugin(options = {}) {
       }
     },
 
-    async ongenerate(generateOptions) {
+    async generateBundle(generateOptions, bundle, isWrite) {
       if (!options.insert && (!styles.length || options.output === false)) {
+        return;
+      }
+      if (!isWrite) {
         return;
       }
 
       const css = styles.map(style => style.content).join('');
 
-      if (isString(options.output)) {
+      if (typeof options.output === 'string') {
         ensureFileSync(options.output, (err) => {
           if (err) {
             throw err;
           }
         });
         return writeFileSync(options.output, css);
-      } else if (isFunction(options.output)) {
+      } else if (typeof options.output == 'function') {
         return options.output(css, styles);
-      } else if (!options.insert && generateOptions.file) {
+      } else if (!options.insert && generateOptions.file && options.output === true) {
         let dest = generateOptions.file;
 
         if (dest.endsWith('.js') || dest.endsWith('.ts')) {
